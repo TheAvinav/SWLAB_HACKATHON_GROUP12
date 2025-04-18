@@ -21,7 +21,8 @@ struct Player {
     int level;
     int x, y;
     std::vector<std::string> inventory;
-    CharacterClass characterClass; // NEW
+    CharacterClass characterClass;
+    bool tempBuff = false;
 };
 
 
@@ -35,6 +36,8 @@ bool saveGame(const std::string& filename);
 bool loadGame(const std::string& filename);
 std::string sha256(const std::string& filename);
 void levelUpIfNeeded();
+void displayMap();
+
 
 extern std::map<std::string, Room> dungeon;
 extern Player player;

@@ -40,12 +40,16 @@ void showStatus() {
     for (const auto& item : player.inventory) std::cout << item << " ";
     std::cout << "\nLocation: (" << player.x << ", " << player.y << ")\n";
     std::cout << "=====================\n";
+    displayMap(); 
 }
+
 
 void handleRoomEvent() {
     std::string key = coordKey(player.x, player.y);
     Room& room = dungeon[key];
-    if (room.visited && room.type != BOSS) return;
+    if (room.visited && room.type != BOSS) 
+    {   std::cout << "you have already visited this room\n";
+        return; }
     room.visited = true;
 
     switch (room.type) {
@@ -54,9 +58,27 @@ void handleRoomEvent() {
             startCombat(rand() % 30 + 20, rand() % 10 + 5);
             break;
         case TREASURE:
-            std::cout << "You found a Healing Potion!\n";
-            player.inventory.push_back("Healing Potion");
-            player.xp += 10;
+            {  // Add these curly braces to create a new scope
+                int treasureType = rand() % 4;
+                switch (treasureType) {
+                    case 0:
+                        std::cout << "You found a Healing Potion!\n";
+                        player.inventory.push_back("Healing Potion");
+                        break;
+                    case 1:
+                        std::cout << "You found a Strength Potion!\n";
+                        player.inventory.push_back("Strength Potion");
+                        break;
+                    case 2:
+                        std::cout << "You found an Experience Scroll!\n";
+                        player.inventory.push_back("Experience Scroll");
+                        break;
+                    case 3:
+                        std::cout << "You found a chest of gold! +20 XP\n";
+                        player.xp += 20;
+                        break;
+                }
+            }  // Close the braces here
             break;
         case TRAP:
             if (player.characterClass == SCAVENGER && rand() % 2 == 0) {
@@ -72,8 +94,6 @@ void handleRoomEvent() {
             startCombat(150, 20);
             if (player.health > 0) bossDefeated = true;
             break;
-        
-        
         default:
             std::cout << "This room is empty.\n";
     }
@@ -163,6 +183,13 @@ void useItem(const std::string& item) {
         if (item == "Healing Potion") {
             player.health += 30;
             std::cout << "You used a Healing Potion. +30 HP!\n";
+        } else if (item == "Strength Potion") {
+            player.attack += 5;
+            std::cout << "You used a Strength Potion. +5 attack permanently!\n";
+        } else if (item == "Experience Scroll") {
+            player.xp += 25;
+            std::cout << "You used an Experience Scroll. +25 XP!\n";
+            levelUpIfNeeded();
         }
         player.inventory.erase(it);
     } else {
@@ -179,3 +206,31 @@ void levelUpIfNeeded() {
         std::cout << "Level up! You are now level " << player.level << "!\n";
     }
 }
+
+void displayMap() {
+    std::cout << "\n===== MAP =====\n";
+    for (int y = 0; y < DUNGEON_HEIGHT; y++) {
+        for (int x = 0; x < DUNGEON_WIDTH; x++) {
+            if (x == player.x && y == player.y) {
+                std::cout << "P "; // Player position
+            } else {
+                std::string key = coordKey(x, y);
+                if (dungeon[key].visited) {
+                    switch (dungeon[key].type) {
+                        case EMPTY: std::cout << ". "; break;
+                        case BATTLE: std::cout << "B "; break;
+                        case TREASURE: std::cout << "T "; break;
+                        case TRAP: std::cout << "X "; break;
+                        case BOSS: std::cout << "! "; break;
+                    }
+                } else {
+                    std::cout << "? "; // Unexplored
+                }
+            }
+        }
+        std::cout << "\n";
+    }
+    std::cout << "==============\n";
+}
+
+
