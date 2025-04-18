@@ -9,12 +9,14 @@ bool saveGame(const std::string& filename) {
     if (!out) return false;
 
     out << player.health << "\n" << player.attack << "\n" << player.xp << "\n"
-        << player.level << "\n" << player.x << " " << player.y << "\n";
+        << player.level << "\n" << player.x << " " << player.y << "\n"
+        << player.tempBuff << "\n"; // Add this line
     
     for (const auto& item : player.inventory) {
         out << item << " ";
     }
     out << "\n" << bossDefeated << "\n";
+
 
     for (const auto& pair : dungeon) {
         out << pair.first << " " << pair.second.type << " " << pair.second.visited << "\n";
@@ -42,7 +44,7 @@ bool loadGame(const std::string& filename) {
         return false;
     }
 
-    in >> player.health >> player.attack >> player.xp >> player.level >> player.x >> player.y;
+    in >> player.health >> player.attack >> player.xp >> player.level  >> player.x >> player.y >> player.tempBuff; 
     in.ignore();
     std::string line;
     getline(in, line);
@@ -64,16 +66,33 @@ bool loadGame(const std::string& filename) {
 }
 
 std::string sha256(const std::string& filename) {
-    std::string command = "sha256sum " + filename + " | cut -d ' ' -f1";
-    FILE* pipe = popen(command.c_str(), "r");
-    if (!pipe) return "";
+    #ifdef _WIN32
+        // Windows implementation
+        std::string command = "certutil -hashfile " + filename + " SHA256 | findstr /v \"hash\"";
+        FILE* pipe = _popen(command.c_str(), "r");
+    #else
+        // Linux/Unix implementation
+        std::string command = "sha256sum " + filename + " | cut -d ' ' -f1";
+        FILE* pipe = popen(command.c_str(), "r");
+    #endif
+    
+    if (!pipe) return "HASH_ERROR";
 
     char buffer[128];
     std::string result = "";
     while (fgets(buffer, 128, pipe) != nullptr) {
         result += buffer;
     }
-    pclose(pipe);
-    result.erase(result.find_last_not_of(" \n\r\t")+1);
+    
+    #ifdef _WIN32
+        _pclose(pipe);
+    #else
+        pclose(pipe);
+    #endif
+    
+    // Clean up the result (remove whitespace and newlines)
+    result.erase(0, result.find_first_not_of(" \t\n\r\f\v"));
+    result.erase(result.find_last_not_of(" \t\n\r\f\v") + 1);
+    
     return result;
 }
